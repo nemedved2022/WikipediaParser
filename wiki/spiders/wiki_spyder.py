@@ -1,6 +1,7 @@
 import scrapy
 from urllib.parse import urljoin
 from wiki.items import WikiItem
+import csv
 
 class WikiSpider(scrapy.Spider):
     name = "wiki"
@@ -11,7 +12,6 @@ class WikiSpider(scrapy.Spider):
     visited_urls = []
 
     def parse(self, response):
-
         for post_link in response.xpath(
                 '//div[@class="mw-category-group"]/ul/li/a/@href').extract():
             url = 'https://ru.wikipedia.org'+post_link
@@ -43,4 +43,20 @@ class WikiSpider(scrapy.Spider):
         country = response.xpath(
             '//*[@data-wikidata-property-id = "P495"]/a/text() | //*[@class = "wrap"]/text() | //*[@class = "country-name"]/span/a/text() | //*[@data-wikidata-property-id = "P495"]/text()').extract()
         item['country'] = country
+
         yield item
+
+        with open('output.csv', 'a', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['title', 'director', 'year', 'genre', 'country']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            if csvfile.tell() == 0:
+                writer.writeheader()
+
+            writer.writerow({
+                'title': item['title'],
+                'director': item['director'],
+                'year': item['year'],
+                'genre': item['genre'],
+                'country': item['country']
+            })
